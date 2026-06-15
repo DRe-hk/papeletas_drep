@@ -1,0 +1,76 @@
+# ===========================================================================
+#  .htaccess RAIZ del proyecto (D:\DREP\PAPELETAS)
+#  DocumentRoot = esta carpeta.
+#
+#  Estrategia: permitir TODO por defecto; denegar SOLO rutas y archivos
+#  sensibles (app/, vendor/, sql/, storage/, tools/, config.php y similares).
+#
+#  La autenticacion de usuarios la hace el codigo PHP de cada pagina
+#  (require_login() / require_admin() en cada archivo). Apache NO
+#  bloquea el acceso al directorio publico, porque los PHP validan la
+#  sesion por su cuenta.
+#
+#  Resuelve:
+#   - 403 Forbidden al acceder a / (antes: "Require all denied" en public/
+#     bloqueaba el directorio antes de buscar index.php).
+#   - Acceso no intencionado a /app/db.php, /config.php, /vendor/, etc.
+# ===========================================================================
+
+DirectoryIndex index.php
+
+# Acceso por defecto: permitido
+<IfModule mod_authz_core.c>
+    Require all granted
+</IfModule>
+
+# -----------------------------------------------------------------
+#  DENEGAR directorios sensibles (bloqueo a nivel de URL).
+#  Esto protege app/, vendor/, sql/, storage/, tools/ y derivados.
+# -----------------------------------------------------------------
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Bloquear acceso directo a directorios sensibles
+    RewriteRule ^(app|vendor|sql|storage|tools)(/|$) - [F,L]
+
+    # Bloquear acceso a archivos sueltos sensibles
+    RewriteRule ^config\.php$              - [F,L]
+    RewriteRule ^composer\.(json|lock)$    - [F,L]
+    RewriteRule ^package(-lock)?\.json$    - [F,L]
+    RewriteRule ^yarn\.lock$               - [F,L]
+    RewriteRule \.(env|sqlite|sqlite3)$    - [F,L]
+    RewriteRule \.(md|sh|bat|cmd|ps1)$     - [F,L]
+    RewriteRule \.(sql|log|ini|yml|yaml)$  - [F,L]
+
+    # Redirigir /favicon.ico al SVG para silenciar el 404 del navegador
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^favicon\.ico$ favicon.svg [L]
+</IfModule>
+
+# -----------------------------------------------------------------
+#  DENEGAR archivos dotfile (defensa adicional, via FilesMatch)
+# -----------------------------------------------------------------
+<FilesMatch "^\.">
+    Require all denied
+</FilesMatch>
+
+# -----------------------------------------------------------------
+#  DENEGAR archivos de configuracion / backup via FilesMatch
+#  (cubre tambien si alguien los sube por FTP sin rewrite)
+# -----------------------------------------------------------------
+<FilesMatch "\.(env|ini|log|sql|sqlite|sqlite3|md|sh|bat|cmd|ps1|yml|yaml)$">
+    Require all denied
+</FilesMatch>
+
+<FilesMatch "^(README|readme|LICENSE|license|CHANGELOG|changelog)\.(md|txt)$">
+    Require all denied
+</FilesMatch>
+
+# -----------------------------------------------------------------
+#  MISC
+# -----------------------------------------------------------------
+Options -Indexes
+AddDefaultCharset UTF-8
+
+
+

@@ -9,25 +9,49 @@ function e(?string $s): string
 /**
  * Construye una URL absoluta (desde la raiz del DocumentRoot).
  *
- * Importante: usa SIEMPRE rutas absolutas con / inicial para que los links
- * funcionen identico desde /dashboard.php, /admin/usuarios.php o cualquier
- * subdirectorio. Antes esta funcion tomaba dirname() del script actual, lo
- * que producia enlaces tipo /admin/dashboard.php cuando se estaba dentro de
- * /admin/ - bug 404 que reporto el usuario.
+ * Auto-detecta el subdirectorio donde esta instalada la app para que las
+ * URLs funcionen tanto con VirtualHost (DocumentRoot = raiz del proyecto)
+ * como con un subdirectorio (http://server/papeletas/).
  *
- * Si la app se instala en un subdirectorio (ej. http://server/papeletas/),
- * definir APP_BASE = '/papeletas' en config.php.
+ * Prioridad:
+ *  1. Si APP_BASE esta definido y NO vacio en config.php -> se usa tal cual.
+ *  2. Si no, se detecta del SCRIPT_NAME actual:
+ *     - SCRIPT_NAME=/index.php                  -> base=''
+ *     - SCRIPT_NAME=/papeletas/index.php        -> base='/papeletas'
+ *     - SCRIPT_NAME=/admin/personal.php         -> base=''
+ *     - SCRIPT_NAME=/papeletas/admin/personal.php -> base='/papeletas'
+ *
+ *  Funciona porque todos los entrypoints PHP viven en la raiz o en /admin/;
+ *  las carpetas /tools/, /vendor/, /sql/, /storage/ no son entrypoints web.
  */
 function url(string $path = ''): string
 {
     static $base = null;
     if ($base === null) {
-        $base = defined('APP_BASE') ? rtrim((string) APP_BASE, '/') : '';
+        $base = detect_app_base();
     }
     if ($path === '') {
         return $base === '' ? '/' : ($base . '/');
     }
     return $base . '/' . ltrim($path, '/');
+}
+
+/**
+ * Detecta el subdirectorio donde esta montada la app.
+ * Si APP_BASE esta definido en config.php, gana.
+ */
+function detect_app_base(): string
+{
+    if (defined('APP_BASE') && APP_BASE !== '') {
+        return rtrim((string) APP_BASE, '/');
+    }
+    $script = $_SERVER['SCRIPT_NAME'] ?? '';
+    $dir = str_replace('\\', '/', dirname($script));
+    // Quitar el subdirectorio conocido (admin/, etc.) si esta al final,
+    // dejando solo el prefijo del proyecto. Si el script esta en la raiz,
+    // dirname = "/" y no hay match -> base = ''.
+    $base = preg_replace('~/(admin|tools|storage|vendor|sql)(/.*)?$~', '', $dir);
+    return rtrim((string) $base, '/');
 }
 
 function redirect(string $path): never

@@ -26,25 +26,26 @@ con datos de una base de datos y numeración correlativa anual automática.
 ## Estructura
 
 ```
-\PAPELETAS\
-├── public\                  ← DocumentRoot del VirtualHost
-│   ├── index.php            Login
-│   ├── dashboard.php        Inicio
-│   ├── papeleta_nueva.php   Formulario
-│   ├── papeleta_descargar.php  Genera y descarga PDF
-│   ├── perfil.php           Cambiar contraseña
-│   ├── admin\
-│   │   ├── usuarios.php     CRUD usuarios
-│   │   ├── personal.php     Listar personal
-│   │   ├── importar_personal.php  CSV → BD
-│   │   ├── importar_personal_plantilla.php  Descarga CSV ejemplo
-│   │   └── papeletas.php    Todas las papeletas
-│   └── .htaccess            Bloquea acceso fuera de PHP
+\PAPELETAS\                  ← DocumentRoot del VirtualHost
+├── index.php            Login
+├── dashboard.php        Inicio
+├── papeleta_nueva.php   Formulario
+├── papeleta_descargar.php  Genera y descarga PDF
+├── perfil.php           Cambiar contraseña
+├── logout.php
+├── favicon.svg
+├── admin\
+│   ├── personal.php          Listar personal + gestión de usuarios vinculados
+│   ├── personal_nuevo.php    Crear/editar personal + reset password
+│   ├── importar_personal.php  CSV → BD
+│   ├── importar_personal_plantilla.php  Descarga CSV ejemplo
+│   └── papeletas.php         Todas las papeletas (admin)
 ├── app\
 │   ├── db.php               Conexión PDO singleton
 │   ├── auth.php             Sesiones, login, require_admin
 │   ├── helpers.php          e(), url(), csrf, layout
 │   ├── numeracion.php       Siguiente correlativo anual (FOR UPDATE)
+│   ├── usuarios_sync.php    sync_user_from_personal()
 │   └── pdf.php              Clase PapeletaPDF con coordenadas
 ├── sql\
 │   ├── schema.sql           DDL
@@ -53,8 +54,10 @@ con datos de una base de datos y numeración correlativa anual automática.
 │   └── plantilla\
 │       └── Papeleta-de-salida-2026.pdf
 ├── tools\
-│   └── create_admin.php     Crea/resetea admin (CLI)
+│   ├── create_admin.php     Crea/resetea admin (CLI)
+│   └── sync_all_users.php   Backfill usuarios (CLI)
 ├── vendor\                  Dependencias Composer
+├── .htaccess                Bloquea /app, /vendor, /sql, /storage, /tools, /config.php
 ├── config.php               Credenciales BD y rutas
 ├── composer.json
 └── README.md
@@ -159,15 +162,20 @@ Panel de control → Red → Adaptador → Propiedades IPv4:
 Crear archivo `C:\laragon\etc\apache2\sites-enabled\auto.papeletas.conf`:
 ```apache
 <VirtualHost *:80>
-    DocumentRoot "C:/laragon/www/papeletas_drep/public"
+    DocumentRoot "D:/DREP/PAPELETAS"          ← raíz del proyecto (NO /public)
     ServerName papeletas.local
     ServerAlias 192.168.1.100
-    <Directory "C:/laragon/www/papeletas_drep/public">
+    <Directory "D:/DREP/PAPELETAS">
         AllowOverride All
         Require all granted
     </Directory>
 </VirtualHost>
 ```
+> **Importante**: el `DocumentRoot` apunta a la RAÍZ del proyecto, no a un
+> subdirectorio `public/`. El `.htaccess` de la raíz bloquea el acceso a las
+> carpetas internas (`app/`, `vendor/`, `sql/`, `storage/`, `tools/`,
+> `config.php`).
+
 Reiniciar Apache desde el panel de Laragon.
 
 ### 7.3 Abrir el puerto 80 en el cortafuegos (¡crítico!)
@@ -225,7 +233,9 @@ New-NetFirewallRule -DisplayName "Papeletas HTTP" -Direction Inbound -LocalPort 
 - Consultas con PDO preparado (sin SQL injection).
 - Roles `admin` / `usuario` (el admin no puede eliminarse a sí mismo).
 - Auditoría: cada papeleta guarda `usuario_id`, `personal_id` y `fecha_emision`.
-- Los directorios `app/`, `sql/`, `storage/`, `tools/` tienen `.htaccess` que deniega acceso web.
+- El `.htaccess` de la raíz bloquea acceso web a `app/`, `vendor/`, `sql/`,
+  `storage/`, `tools/`, `config.php`, `composer.json`, `*.md`, etc.
+  (defensa en profundidad: `Require all denied` + `RewriteRule [F,L]`).
 
 ## Ajuste fino de coordenadas del PDF
 
