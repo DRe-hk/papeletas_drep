@@ -15,7 +15,7 @@ function refresh_user_session(): void
     if (!$u) return;
     $st = DB::pdo()->prepare(
         'SELECT u.id, u.username, u.rol, u.activo, u.must_change, u.personal_id,
-                p.dni, p.apellidos_nombres, p.regimen_laboral, p.regimen, p.dependencia, p.cargo
+                p.dni, p.apellidos_nombres, p.regimen, p.dependencia, p.cargo
          FROM usuarios u LEFT JOIN personal p ON p.id = u.personal_id
          WHERE u.id = ? AND u.activo = 1 LIMIT 1'
     );
@@ -47,7 +47,7 @@ function require_admin(): void
 
 function try_login(string $username, string $password): ?array
 {
-    $st = DB::pdo()->prepare('SELECT u.*, p.dni, p.apellidos_nombres, p.regimen_laboral, p.regimen, p.dependencia, p.cargo
+    $st = DB::pdo()->prepare('SELECT u.*, p.dni, p.apellidos_nombres, p.regimen, p.dependencia, p.cargo
                               FROM usuarios u
                               LEFT JOIN personal p ON p.id = u.personal_id
                               WHERE u.username = ? AND u.activo = 1 LIMIT 1');

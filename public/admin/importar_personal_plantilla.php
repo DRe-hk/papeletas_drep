@@ -12,8 +12,8 @@ header('Content-Disposition: attachment; filename="' . $filename . '"');
 
 $out = fopen('php://output', 'w');
 fwrite($out, "\xEF\xBB\xBF"); // BOM para que Excel detecte UTF-8
-fputcsv($out, ['dni','apellidos_nombres','regimen_laboral','regimen','dependencia','cargo']);
+fputcsv($out, ['dni','apellidos_nombres','regimen','dependencia','cargo']);
 foreach ($rows as $r) {
-    fputcsv($out, [$r['dni'], $r['apellidos_nombres'], $r['regimen_laboral'], $r['regimen'], $r['dependencia'], $r['cargo']]);
+    fputcsv($out, [$r['dni'], $r['apellidos_nombres'], $r['regimen'], $r['dependencia'], $r['cargo']]);
 }
 fclose($out);

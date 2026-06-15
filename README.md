@@ -103,11 +103,15 @@ php tools\create_admin.php admin admin123
 1. Iniciar sesión como `admin`.
 2. Ir a **Administración → Personal → Importar personal (CSV)**.
 3. Descargar la plantilla (`Importar personal (CSV) → Descargar plantilla`).
-4. Llenar con los datos de los trabajadores. Columnas requeridas:
+4. Llenar con los datos de los trabajadores. Columnas requeridas (5):
    ```
-   dni,apellidos_nombres,regimen_laboral,regimen,dependencia,cargo
-   12345678,PEREZ JUAN,276,D.L. 276,OFICINA DE ADMINISTRACION,TECNICO
+   dni,apellidos_nombres,regimen,dependencia,cargo
+   12345678,PEREZ JUAN,D.L. 276,OFICINA DE ADMINISTRACION,TECNICO
+   87654321,GOMEZ MARIA,D.L. 728,DIRECCION,ESPECIALISTA
+   11223344,RAMOS LUIS,CAS,OFICINA DE PERSONAL,ASISTENTE
    ```
+   El campo `regimen` acepta el codigo corto (`276`, `728`, `CAS`) o la descripcion
+   completa (`D.L. 276`, `D.L. 728`, `CAS`, etc.).
 5. Subir el archivo. El sistema inserta nuevos o actualiza existentes (por DNI).
 
 ### 6. Crear usuarios (automático)

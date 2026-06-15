@@ -139,7 +139,7 @@ render_flashes();
         <tr>
           <td><code><?= e($r['dni']) ?></code></td>
           <td><?= e($r['apellidos_nombres']) ?></td>
-          <td><small><?= e($r['regimen_laboral']) ?></small></td>
+          <td><small><?= e($r['regimen']) ?></small></td>
           <td><small><?= e($r['dependencia']) ?></small></td>
           <td><small><?= e($r['cargo']) ?></small></td>
 

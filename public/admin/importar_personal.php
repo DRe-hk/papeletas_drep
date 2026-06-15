@@ -26,7 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['archivo'])) {
 
 /**
  * Importa un CSV con columnas:
- *   dni,apellidos_nombres,regimen_laboral,regimen,dependencia,cargo
+ *   dni,apellidos_nombres,regimen,dependencia,cargo
  * Primera fila = encabezados (se salta).
  * Codificación: UTF-8.
  * - Si el DNI ya existe -> actualiza.
@@ -43,7 +43,7 @@ function importar_csv(string $ruta): array
 
     // Normalizar encabezados
     $cab = array_map(fn($c) => strtolower(trim($c)), $cab);
-    $req = ['dni', 'apellidos_nombres', 'regimen_laboral', 'regimen', 'dependencia', 'cargo'];
+    $req = ['dni', 'apellidos_nombres', 'regimen', 'dependencia', 'cargo'];
     foreach ($req as $r) {
         if (!in_array($r, $cab, true)) {
             fclose($h);
@@ -55,8 +55,8 @@ function importar_csv(string $ruta): array
     $pdo = DB::pdo();
     $ins = 0; $upd = 0; $usrNew = 0; $usrUpd = 0; $errs = [];
     $stExist = $pdo->prepare('SELECT id, activo FROM personal WHERE dni = ?');
-    $stIns   = $pdo->prepare('INSERT INTO personal (dni, apellidos_nombres, regimen_laboral, regimen, dependencia, cargo, activo) VALUES (?,?,?,?,?,?,1)');
-    $stUpd   = $pdo->prepare('UPDATE personal SET apellidos_nombres=?, regimen_laboral=?, regimen=?, dependencia=?, cargo=? WHERE id=?');
+    $stIns   = $pdo->prepare('INSERT INTO personal (dni, apellidos_nombres, regimen, dependencia, cargo, activo) VALUES (?,?,?,?,?,1)');
+    $stUpd   = $pdo->prepare('UPDATE personal SET apellidos_nombres=?, regimen=?, dependencia=?, cargo=? WHERE id=?');
 
     $linea = 1;
     while (($row = fgetcsv($h, 0, ',', '"', '')) !== false) {
@@ -64,24 +64,23 @@ function importar_csv(string $ruta): array
         if (count($row) < count($cab)) { $errs[] = "Línea $linea: incompleta"; continue; }
         $dni   = trim($row[$idx['dni']] ?? '');
         $nomb  = trim($row[$idx['apellidos_nombres']] ?? '');
-        $rl    = trim($row[$idx['regimen_laboral']] ?? '');
         $reg   = trim($row[$idx['regimen']] ?? '');
         $dep   = trim($row[$idx['dependencia']] ?? '');
         $cgo   = trim($row[$idx['cargo']] ?? '');
 
         if (!preg_match('/^\d{8}$/', $dni)) { $errs[] = "Línea $linea: DNI inválido ($dni)"; continue; }
-        if ($nomb === '' || $dep === '' || $cgo === '') { $errs[] = "Línea $linea: faltan datos"; continue; }
+        if ($nomb === '' || $reg === '' || $dep === '' || $cgo === '') { $errs[] = "Línea $linea: faltan datos"; continue; }
 
         try {
             $stExist->execute([$dni]);
             $rowExist = $stExist->fetch();
             if ($rowExist) {
                 $id = (int) $rowExist['id'];
-                $stUpd->execute([$nomb, $rl, $reg, $dep, $cgo, $id]);
+                $stUpd->execute([$nomb, $reg, $dep, $cgo, $id]);
                 $upd++;
                 $activo = (int) $rowExist['activo'];
             } else {
-                $stIns->execute([$dni, $nomb, $rl, $reg, $dep, $cgo]);
+                $stIns->execute([$dni, $nomb, $reg, $dep, $cgo]);
                 $id = (int) $pdo->lastInsertId();
                 $ins++;
                 $activo = 1;
@@ -153,14 +152,14 @@ render_flashes();
     <div class="card">
       <div class="card-header bg-white"><strong><i class="bi bi-info-circle"></i> Formato esperado</strong></div>
       <div class="card-body">
-        <p>El CSV debe tener estas 6 columnas (en este orden):</p>
-        <pre class="bg-light p-2 small mb-2">dni,apellidos_nombres,regimen_laboral,regimen,dependencia,cargo</pre>
+        <p>El CSV debe tener estas 5 columnas (en este orden):</p>
+        <pre class="bg-light p-2 small mb-2">dni,apellidos_nombres,regimen,dependencia,cargo</pre>
         <p><strong>Ejemplo:</strong></p>
-        <pre class="bg-light p-2 small">12345678,PEREZ JUAN,276,D.L. 276,OFICINA DE ADMINISTRACION,TECNICO ADMINISTRATIVO
-87654321,GOMEZ MARIA,728,D.L. 728,DIRECCION,ESPECIALISTA</pre>
+        <pre class="bg-light p-2 small">12345678,PEREZ JUAN,D.L. 276,OFICINA DE ADMINISTRACION,TECNICO ADMINISTRATIVO
+87654321,GOMEZ MARIA,D.L. 728,DIRECCION,ESPECIALISTA
+11223344,RAMOS LUIS,CAS,OFICINA DE PERSONAL,ASISTENTE</pre>
         <p class="small text-muted">
-          • <code>regimen_laboral</code> = código (276, 728, CAS, etc.)<br>
-          • <code>regimen</code> = descripción completa (D.L. 276, D.L. 728, etc.)<br>
+          • <code>regimen</code> = texto del regimen. Acepta codigo corto (<code>276</code>, <code>728</code>, <code>CAS</code>) o descripcion completa (<code>D.L. 276</code>, etc.).<br>
           • Si el DNI ya existe, se actualiza; si no, se inserta.
         </p>
         <a class="btn btn-sm btn-outline-secondary" href="<?= url('admin/importar_personal_plantilla.php') ?>">

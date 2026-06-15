@@ -14,19 +14,32 @@ require_once __DIR__ . "/../config.php";
  * FPDF por defecto usa origen abajo-izquierda; aquí convertimos con
  *    pdf_y = page_height_mm - y_mm
  * Ajusta los valores del array $POS si algún campo se desvía.
+ *
+ * === Como ajustar el tamaño de la X (los checkboxes) ===
+ * La X que se dibuja sobre los cuadraditos de motivo (y el SI/NO de RETORNA)
+ * usa la fuente Helvetica Bold. El tamaño se controla con la constante
+ * CHECK_FONT_SIZE de abajo. Cambia ese numero (en puntos) y vuelve a generar.
+ * Rango recomendado: 8 (muy pequena) a 14 (muy grande). Default: 10.
  */
 final class PapeletaPDF
 {
+    /**
+     * Tamaño de la fuente (en puntos) usada para dibujar la "X" en los
+     * checkboxes. Mas pequeno = X mas pequena. Mas grande = X mas grande.
+     * Cambia este valor y regenera una papeleta para ver el efecto.
+     */
+    private const CHECK_FONT_SIZE = 8;
+
     /** Coordenadas absolutas en mm. Editables si la plantilla cambia. */
     private const POS = [
         // ----------------------- PAPELETA DE SALIDA (izquierda, x: 0-105) -----
-        "numero" => ["x" => 87, "y" => 7.5, "size" => 9],
-        "fecha" => ["x" => 87, "y" => 12.5, "size" => 9],
-        "dni" => ["x" => 87, "y" => 17, "size" => 9],
-        "apellidos_nombres" => ["x" => 38, "y" => 25.5, "size" => 9],
-        "regimen_laboral" => ["x" => 38, "y" => 30, "size" => 9],
-        "dependencia" => ["x" => 38, "y" => 35, "size" => 9],
-        "cargo" => ["x" => 38, "y" => 40, "size" => 9],
+        "numero" => ["x" => 87, "y" => 7.5, "size" => 6],
+        "fecha" => ["x" => 87, "y" => 12.5, "size" => 6],
+        "dni" => ["x" => 87, "y" => 17, "size" => 6],
+        "apellidos_nombres" => ["x" => 38, "y" => 25.5, "size" => 6],
+        "regimen_salida" => ["x" => 38, "y" => 30, "size" => 6],
+        "dependencia" => ["x" => 38, "y" => 35, "size" => 6],
+        "cargo" => ["x" => 38, "y" => 40, "size" => 6],
 
         // Checkboxes de motivo - dibujamos una X sobre el cuadradito
         "mot_capacitacion" => ["x" => 93, "y" => 57.5, "check" => true],
@@ -36,32 +49,32 @@ final class PapeletaPDF
         "mot_maternidad" => ["x" => 93, "y" => 69.5, "check" => true],
         "mot_particulares" => ["x" => 93, "y" => 72.5, "check" => true],
 
-        "fundamentacion" => ["x" => 10, "y" => 82.5, "size" => 9],
-        "lugar" => ["x" => 48, "y" => 90, "size" => 9],
+        "fundamentacion" => ["x" => 10, "y" => 82.5, "size" => 6],
+        "lugar" => ["x" => 48, "y" => 90, "size" => 6],
 
-        "dia" => ["x" => 9, "y" => 103, "size" => 9],
-        "mes" => ["x" => 18, "y" => 103, "size" => 9],
-        "anio_dmy" => ["x" => 26, "y" => 103, "size" => 9],
-        "hora_salida" => ["x" => 57, "y" => 98, "size" => 9],
-        "hora_retorno" => ["x" => 93, "y" => 98, "size" => 9],
+        "dia" => ["x" => 9, "y" => 103, "size" => 6],
+        "mes" => ["x" => 18, "y" => 103, "size" => 6],
+        "anio_dmy" => ["x" => 26, "y" => 103, "size" => 6],
+        "hora_salida" => ["x" => 57, "y" => 98, "size" => 6],
+        "hora_retorno" => ["x" => 93, "y" => 98, "size" => 6],
 
         "retorna_si" => ["x" => 82, "y" => 105, "check" => true],
         "retorna_no" => ["x" => 94, "y" => 105, "check" => true],
 
-        "observaciones" => ["x" => 30, "y" => 111, "size" => 9],
+        "observaciones" => ["x" => 30, "y" => 111, "size" => 6],
 
         // ----------------------- PAPELETA DE RETORNO (derecha, x: 110-200) ------
-        "numero_ret" => ["x" => 185, "y" => 7.5, "size" => 9],
-        "fecha_ret" => ["x" => 185, "y" => 12.5, "size" => 9],
-        "dni_ret" => ["x" => 185, "y" => 17, "size" => 9],
+        "numero_ret" => ["x" => 185, "y" => 7.5, "size" => 6],
+        "fecha_ret" => ["x" => 185, "y" => 12.5, "size" => 6],
+        "dni_ret" => ["x" => 185, "y" => 17, "size" => 6],
 
-        "apellidos_nombres_ret" => ["x" => 152, "y" => 25.5, "size" => 9],
-        "regimen_ret" => ["x" => 145, "y" => 30, "size" => 9],
-        "dependencia_ret" => ["x" => 145, "y" => 35, "size" => 9],
-        "cargo_ret" => ["x" => 145, "y" => 40, "size" => 9],
+        "apellidos_nombres_ret" => ["x" => 152, "y" => 25.5, "size" => 6],
+        "regimen_ret" => ["x" => 145, "y" => 30, "size" => 6],
+        "dependencia_ret" => ["x" => 145, "y" => 35, "size" => 6],
+        "cargo_ret" => ["x" => 145, "y" => 40, "size" => 6],
 
-        "observaciones_ret" => ["x" => 124, "y" => 55, "size" => 9],
-        "lugar_visita" => ["x" => 153, "y" => 75, "size" => 9],
+        "observaciones_ret" => ["x" => 124, "y" => 55, "size" => 6],
+        "lugar_visita" => ["x" => 153, "y" => 75, "size" => 6],
     ];
 
     private const MOTIVO_CODES = [
@@ -141,7 +154,7 @@ final class PapeletaPDF
         };
 
         $drawCheck = function (Fpdi $pdf, array $p) {
-            $pdf->SetFont("Helvetica", "B", 12);
+            $pdf->SetFont("Helvetica", "B", self::CHECK_FONT_SIZE);
             $pdf->SetTextColor(0, 0, 0);
             $pdf->SetXY((float) $p["x"] - 1.5, (float) $p["y"] - 1.5);
             $pdf->Write(0, "X");
@@ -155,7 +168,7 @@ final class PapeletaPDF
         $drawText($pdf, $p["dni"], $pos["dni"]);
 
         $drawText($pdf, $p["apellidos_nombres"], $pos["apellidos_nombres"]);
-        $drawText($pdf, $p["regimen_laboral"] ?? "", $pos["regimen_laboral"]);
+        $drawText($pdf, $p["regimen"] ?? "", $pos["regimen_salida"]);
         $drawText($pdf, $p["dependencia"], $pos["dependencia"]);
         $drawText($pdf, $p["cargo"], $pos["cargo"]);
 
@@ -203,11 +216,7 @@ final class PapeletaPDF
         $drawText($pdf, $p["fecha"], $pos["fecha_ret"]);
         $drawText($pdf, $p["dni"], $pos["dni_ret"]);
         $drawText($pdf, $p["apellidos_nombres"], $pos["apellidos_nombres_ret"]);
-        $drawText(
-            $pdf,
-            $p["regimen"] ?? ($p["regimen_laboral"] ?? ""),
-            $pos["regimen_ret"],
-        );
+        $drawText($pdf, $p["regimen"] ?? "", $pos["regimen_ret"]);
         $drawText($pdf, $p["dependencia"], $pos["dependencia_ret"]);
         $drawText($pdf, $p["cargo"], $pos["cargo_ret"]);
 

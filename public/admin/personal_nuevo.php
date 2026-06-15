@@ -12,8 +12,8 @@ $editId = (int) ($_GET['edit'] ?? 0);
 
 // Cargar registro a editar
 $row = [
-    'id' => 0, 'dni' => '', 'apellidos_nombres' => '', 'regimen_laboral' => '',
-    'regimen' => '', 'dependencia' => '', 'cargo' => '', 'activo' => 1,
+    'id' => 0, 'dni' => '', 'apellidos_nombres' => '', 'regimen' => '',
+    'dependencia' => '', 'cargo' => '', 'activo' => 1,
 ];
 if ($editId) {
     $st = DB::pdo()->prepare('SELECT * FROM personal WHERE id = ?');
@@ -102,8 +102,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $id          = (int) ($_POST['id'] ?? 0);
         $dni         = trim($_POST['dni']              ?? '');
         $nomb        = trim($_POST['apellidos_nombres'] ?? '');
-        $rLab        = trim($_POST['regimen_laboral']  ?? '');
-        $rFull       = trim($_POST['regimen']          ?? '');
+        $reg         = trim($_POST['regimen']          ?? '');
         $dep         = trim($_POST['dependencia']      ?? '');
         $cgo         = trim($_POST['cargo']            ?? '');
         $activo      = isset($_POST['activo']) ? 1 : 0;
@@ -114,8 +113,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'id'                => $id,
             'dni'               => $dni,
             'apellidos_nombres' => $nomb,
-            'regimen_laboral'   => $rLab,
-            'regimen'           => $rFull,
+            'regimen'           => $reg,
             'dependencia'       => $dep,
             'cargo'             => $cgo,
             'activo'            => $activo,
@@ -124,8 +122,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Validaciones
         if (!preg_match('/^\d{8}$/', $dni))              $err = 'El DNI debe tener exactamente 8 digitos.';
         elseif ($nomb === '' || strlen($nomb) < 5)       $err = 'Indique apellidos y nombres completos.';
-        elseif ($rLab === '')                            $err = 'Indique el codigo de regimen laboral (276, 728, CAS, etc.).';
-        elseif ($rFull === '')                           $err = 'Indique la descripcion del regimen.';
+        elseif ($reg === '')                             $err = 'Indique el regimen (D.L. 276, D.L. 728, CAS, etc.).';
         elseif ($dep === '')                             $err = 'Indique la dependencia.';
         elseif ($cgo === '')                             $err = 'Indique el cargo.';
 
@@ -136,21 +133,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if ($id) {
                     $pdo->prepare(
                         'UPDATE personal
-                         SET apellidos_nombres=?, regimen_laboral=?, regimen=?, dependencia=?, cargo=?, activo=?
+                         SET apellidos_nombres=?, regimen=?, dependencia=?, cargo=?, activo=?
                          WHERE id=?'
-                    )->execute([$nomb, $rLab, $rFull, $dep, $cgo, $activo, $id]);
+                    )->execute([$nomb, $reg, $dep, $cgo, $activo, $id]);
                 } else {
                     $pdo->prepare(
-                        'INSERT INTO personal (dni, apellidos_nombres, regimen_laboral, regimen, dependencia, cargo, activo)
-                         VALUES (?,?,?,?,?,?,?)
+                        'INSERT INTO personal (dni, apellidos_nombres, regimen, dependencia, cargo, activo)
+                         VALUES (?,?,?,?,?,?)
                          ON DUPLICATE KEY UPDATE
                            apellidos_nombres=VALUES(apellidos_nombres),
-                           regimen_laboral=VALUES(regimen_laboral),
                            regimen=VALUES(regimen),
                            dependencia=VALUES(dependencia),
                            cargo=VALUES(cargo),
                            activo=VALUES(activo)'
-                    )->execute([$dni, $nomb, $rLab, $rFull, $dep, $cgo, $activo]);
+                    )->execute([$dni, $nomb, $reg, $dep, $cgo, $activo]);
                     // Recuperar el id (puede ser nuevo o existente)
                     $st = $pdo->prepare('SELECT id FROM personal WHERE dni = ?');
                     $st->execute([$dni]);
@@ -239,24 +235,8 @@ render_flashes();
               placeholder="Ej: PEREZ JUAN CARLOS">
           </div>
 
-          <div class="col-md-3">
-            <label class="form-label">Regimen (codigo) <span class="text-danger">*</span></label>
-            <input
-              name="regimen_laboral"
-              class="form-control"
-              required
-              maxlength="80"
-              list="reg-codes"
-              value="<?= e($row['regimen_laboral'] ?? '') ?>"
-              placeholder="276">
-            <datalist id="reg-codes">
-              <option value="276"><option value="728"><option value="1057">
-              <option value="CAS"><option value="30001"><option value="FAG"><option value="CAP">
-            </datalist>
-          </div>
-
-          <div class="col-md-9">
-            <label class="form-label">Regimen (descripcion) <span class="text-danger">*</span></label>
+          <div class="col-md-12">
+            <label class="form-label">Regimen <span class="text-danger">*</span></label>
             <input
               name="regimen"
               class="form-control"
@@ -266,10 +246,21 @@ render_flashes();
               value="<?= e($row['regimen'] ?? '') ?>"
               placeholder="D.L. 276">
             <datalist id="reg-names">
-              <option value="D.L. 276"><option value="D.L. 728">
-              <option value="D.L. 1057 - CAS"><option value="Ley 30001 - PRONOEI">
-              <option value="FAG - Practicante"><option value="CAP - PNP">
+              <option value="D.L. 276">
+              <option value="D.L. 728">
+              <option value="D.L. 1057 - CAS">
+              <option value="Ley 30001 - PRONOEI">
+              <option value="FAG - Practicante">
+              <option value="CAP - PNP">
+              <option value="276">
+              <option value="728">
+              <option value="1057">
+              <option value="CAS">
             </datalist>
+            <div class="form-text">
+              Ejemplos: <code>D.L. 276</code>, <code>D.L. 728</code>, <code>D.L. 1057 - CAS</code>, <code>Ley 30001 - PRONOEI</code>.
+              Puedes usar el codigo corto (276, 728, CAS) o la descripcion completa.
+            </div>
           </div>
 
           <div class="col-md-6">

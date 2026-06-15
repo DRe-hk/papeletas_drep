@@ -144,8 +144,8 @@ render_flashes();
         <input class="form-control" value="<?= e($personal['apellidos_nombres'] ?? '') ?>" readonly>
       </div>
       <div class="col-md-4">
-        <label class="form-label">Régimen Laboral</label>
-        <input class="form-control" value="<?= e($personal['regimen_laboral'] ?? '') ?>" readonly>
+        <label class="form-label">Régimen</label>
+        <input class="form-control" value="<?= e($personal['regimen'] ?? '') ?>" readonly>
       </div>
       <div class="col-md-4">
         <label class="form-label">Dependencia</label>
