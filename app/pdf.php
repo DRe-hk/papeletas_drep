@@ -49,7 +49,7 @@ final class PapeletaPDF
         "mot_maternidad" => ["x" => 93, "y" => 69.5, "check" => true],
         "mot_particulares" => ["x" => 93, "y" => 72.5, "check" => true],
 
-        "fundamentacion" => ["x" => 10, "y" => 82.5, "size" => 6],
+        "fundamentacion" => ["x" => 7, "y" => 81, "size" => 6, "width" => 110],
         "lugar" => ["x" => 48, "y" => 90, "size" => 6],
 
         "dia" => ["x" => 9, "y" => 103, "size" => 6],
@@ -61,7 +61,7 @@ final class PapeletaPDF
         "retorna_si" => ["x" => 82, "y" => 105, "check" => true],
         "retorna_no" => ["x" => 94, "y" => 105, "check" => true],
 
-        "observaciones" => ["x" => 30, "y" => 111, "size" => 6],
+        "observaciones" => ["x" => 25, "y" => 110, "size" => 6, "width" => 90],
 
         // ----------------------- PAPELETA DE RETORNO (derecha, x: 110-200) ------
         "numero_ret" => ["x" => 185, "y" => 7.5, "size" => 6],
@@ -146,11 +146,32 @@ final class PapeletaPDF
             $pdf->SetFont(
                 "Helvetica",
                 !empty($p["bold"]) ? "B" : "",
-                $p["size"] ?? 10,
+                $p["size"] ?? 6,
             );
             $pdf->SetTextColor(0, 0, 0);
+            $text = (string) ($text ?? "");
+
+            // FPDF usa Latin-1 (windows-1252) internamente. La BD nos entrega
+            // texto en UTF-8, asi que convertimos a windows-1252 para que
+            // ñ, Ñ, acentos (ÁÉÍÓÚáéíóú), ¿ y ¡ se rendericen correctamente.
+            // //TRANSLIT intenta transliterar caracteres fuera de Latin-1.
+            if (function_exists("iconv") && $text !== "") {
+                $converted = @iconv("UTF-8", "windows-1252//TRANSLIT", $text);
+                if ($converted !== false) {
+                    $text = $converted;
+                }
+            }
+
             $pdf->SetXY((float) $p["x"], (float) $p["y"]);
-            $pdf->Write(0, (string) ($text ?? ""));
+            if (!empty($p["width"])) {
+                // Multi-line: word-wrap automatico al ancho indicado (mm).
+                // El texto se parte en varias lineas si excede el ancho.
+                // Las nuevas lineas explicitas (\n) tambien se respetan.
+                $pdf->MultiCell((float) $p["width"], 3.0, $text, 0, "L", false);
+            } else {
+                // Single line
+                $pdf->Write(0, $text);
+            }
         };
 
         $drawCheck = function (Fpdi $pdf, array $p) {
