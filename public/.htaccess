@@ -1,0 +1,49 @@
+# ===========================================================================
+#  Estrategia: permitir todo por defecto, denegar solo archivos sensibles.
+#
+#  La autenticacion de usuarios la hace el codigo PHP de cada pagina
+#  (require_login() / require_admin() en cada archivo). Apache NO
+#  necesita denegar el acceso al directorio publico, porque los PHP
+#  validan la sesion por su cuenta.
+#
+#  Esto resuelve el 403 Forbidden al acceder a http://papeletas.test/
+#  que ocurria porque la regla anterior "Require all denied" + DirectoryIndex
+#  hacian que Apache rechazara la peticion al DIRECTORIO antes de buscar
+#  el index.php (ver error_log: AH01630 client denied by server configuration).
+# ===========================================================================
+
+DirectoryIndex index.php
+
+# Acceso por defecto: permitido
+<IfModule mod_authz_core.c>
+    Require all granted
+</IfModule>
+
+# Bloquear dotfiles (.htaccess, .git, .env, etc.)
+<FilesMatch "^\.">
+    Require all denied
+</FilesMatch>
+
+# Bloquear archivos de configuracion / backup
+<FilesMatch "\.(env|yml|yaml|ini|log|sql|sqlite|sqlite3|md|sh|bat|cmd|ps1)$">
+    Require all denied
+</FilesMatch>
+<FilesMatch "^(composer\.(json|lock)|package(-lock)?\.json|yarn\.lock)$">
+    Require all denied
+</FilesMatch>
+<FilesMatch "^(README|readme|LICENSE|license|CHANGELOG|changelog).*$">
+    Require all denied
+</FilesMatch>
+
+# Sin listado de directorios
+Options -Indexes
+
+# Forzar UTF-8
+AddDefaultCharset UTF-8
+
+# Redirigir /favicon.ico al SVG para silenciar el 404 del navegador
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^favicon\.ico$ favicon.svg [L]
+</IfModule>

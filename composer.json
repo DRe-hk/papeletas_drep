@@ -1,0 +1,17 @@
+{
+    "name": "drep/papeletas",
+    "description": "Sistema de Papeletas de Salida - DRE Puno",
+    "type": "project",
+    "require": {
+        "php": ">=8.1",
+        "setasign/fpdf": "^1.8",
+        "setasign/fpdi": "^2.6.5"
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "audit": {
+            "abandoned": "ignore",
+            "ignore": ["PKSA-37cw-b473-k9np", "PKSA-p3w6-ybvq-zfbx"]
+        }
+    }
+}
