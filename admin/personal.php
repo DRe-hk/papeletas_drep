@@ -8,13 +8,11 @@ require_admin();
 $u  = current_user();
 $ok = null; $err = null;
 
-// ---------- Acciones masivas (POST) ----------
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_check();
     $action = $_POST['action'] ?? '';
 
     if ($action === 'sync_all') {
-        // Backfill masivo: crear usuario para cada personal activo sin uno
         $pdo = DB::pdo();
         $rows = $pdo->query("
             SELECT p.id, p.dni, p.activo
@@ -34,14 +32,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// ---------- Borrar (GET con CSRF) ----------
 if (isset($_GET['del'])) {
     csrf_check_get();
     $id = (int) $_GET['del'];
     try {
         $pdo = DB::pdo();
         $pdo->beginTransaction();
-        // Desvincular el usuario (preserva la cuenta, solo quita el link)
         $pdo->prepare('UPDATE usuarios SET personal_id = NULL WHERE personal_id = ?')->execute([$id]);
         $pdo->prepare('DELETE FROM personal WHERE id = ?')->execute([$id]);
         $pdo->commit();
@@ -67,7 +63,6 @@ $st = DB::pdo()->prepare($sql);
 $st->execute($params);
 $rows = $st->fetchAll();
 
-// Conteo para el boton sincronizar
 $stCount = DB::pdo()->query("
     SELECT COUNT(*) FROM personal p
     LEFT JOIN usuarios u ON u.personal_id = p.id
@@ -78,121 +73,144 @@ $sinUsuario = (int) $stCount;
 layout_header('Personal');
 render_flashes();
 ?>
-<div class="d-flex justify-content-between align-items-center mb-3">
-  <h5 class="mb-0">
-    <i class="bi bi-person-vcard"></i> Personal registrado
-    <span class="badge text-bg-secondary"><?= count($rows) ?></span>
-  </h5>
+
+<div class="page-header">
+  <div>
+    <h1><i class="bi bi-person-vcard"></i> Personal y usuarios</h1>
+    <div class="page-sub">Administre los registros del personal y los usuarios del sistema. <span class="badge text-bg-secondary"><?= count($rows) ?> registros</span></div>
+  </div>
   <div class="d-flex gap-2 flex-wrap">
-    <?php if ($sinUsuario > 0): ?>
-      <form method="post" onsubmit="return confirm('Crear usuario (DNI/DNI) para los <?= $sinUsuario ?> personal(es) sin cuenta vinculada?');">
-        <input type="hidden" name="_csrf"  value="<?= e(csrf_token()) ?>">
-        <input type="hidden" name="action" value="sync_all">
-        <button class="btn btn-warning">
-          <i class="bi bi-lightning-charge"></i>
-          Sincronizar usuarios (<?= $sinUsuario ?>)
-        </button>
-      </form>
-    <?php endif; ?>
-    <a href="<?= url('admin/personal_nuevo.php') ?>" class="btn btn-primary">
-      <i class="bi bi-plus-lg"></i> Nuevo personal
-    </a>
-    <a href="<?= url('admin/importar_personal.php') ?>" class="btn btn-success">
+    <a href="<?= url('admin/importar_personal.php') ?>" class="btn btn-outline-primary">
       <i class="bi bi-upload"></i> Importar CSV
+    </a>
+    <a href="<?= url('admin/personal_nuevo.php') ?>" class="btn btn-cta">
+      <i class="bi bi-plus-circle-fill"></i> Nuevo personal
     </a>
   </div>
 </div>
 
-<form method="get" class="mb-3">
-  <div class="input-group">
-    <input class="form-control" name="q" placeholder="Buscar por DNI, nombre o dependencia..." value="<?= e($q) ?>">
-    <button class="btn btn-primary"><i class="bi bi-search"></i></button>
-    <?php if ($q): ?><a href="?" class="btn btn-secondary"><i class="bi bi-x"></i></a><?php endif; ?>
+<?php if ($sinUsuario > 0): ?>
+  <div class="alert alert-info">
+    <i class="bi bi-lightning-charge-fill"></i>
+    <div class="flex-grow-1">
+      Hay <strong><?= $sinUsuario ?></strong> personal(es) sin usuario del sistema. Use la sincronizacion para crearlos en bloque.
+    </div>
+    <form method="post" onsubmit="return confirm('Crear usuario (DNI/DNI) para los <?= $sinUsuario ?> personal(es) sin cuenta?');" class="m-0">
+      <input type="hidden" name="_csrf"  value="<?= e(csrf_token()) ?>">
+      <input type="hidden" name="action" value="sync_all">
+      <button class="btn btn-sm btn-warning">
+        <i class="bi bi-lightning-charge"></i> Sincronizar usuarios (<?= $sinUsuario ?>)
+      </button>
+    </form>
   </div>
-</form>
+<?php endif; ?>
 
-<?php if ($ok):  ?><div class="alert alert-success py-2"><?= e($ok) ?></div><?php endif; ?>
-<?php if ($err): ?><div class="alert alert-danger  py-2"><?= e($err) ?></div><?php endif; ?>
+<div class="toolbar">
+  <form method="get" class="d-flex gap-2 flex-grow-1 m-0">
+    <div class="input-icon flex-grow-1">
+      <i class="bi bi-search"></i>
+      <input class="form-control" name="q" placeholder="Buscar por DNI, nombre o dependencia..." value="<?= e($q) ?>">
+    </div>
+    <button class="btn btn-primary"><i class="bi bi-search"></i></button>
+    <?php if ($q): ?><a href="?" class="btn btn-secondary"><i class="bi bi-x-lg"></i></a><?php endif; ?>
+  </form>
+</div>
 
-<div class="card">
+<?php if ($ok): ?>
+  <div class="alert alert-success">
+    <i class="bi bi-check-circle-fill"></i>
+    <div><?= e($ok) ?></div>
+  </div>
+<?php endif; ?>
+<?php if ($err): ?>
+  <div class="alert alert-danger">
+    <i class="bi bi-exclamation-triangle-fill"></i>
+    <div><?= e($err) ?></div>
+  </div>
+<?php endif; ?>
+
+<div class="table-wrap">
   <div class="table-responsive">
-  <table class="table table-sm table-hover mb-0 align-middle">
-    <thead class="table-light">
-      <tr>
-        <th>DNI</th>
-        <th>Apellidos y Nombres</th>
-        <th>Regimen</th>
-        <th>Dependencia</th>
-        <th>Cargo</th>
-        <th>Personal</th>
-        <th>Usuario</th>
-        <th>Clave</th>
-        <th></th>
-      </tr>
-    </thead>
-    <tbody>
-      <?php if (!$rows): ?>
-        <tr><td colspan="9" class="text-center text-muted py-4">
-          Sin registros. Importe un CSV o cree uno nuevo.
-        </td></tr>
-      <?php else: foreach ($rows as $r): ?>
+    <table class="table align-middle mb-0">
+      <thead>
         <tr>
-          <td><code><?= e($r['dni']) ?></code></td>
-          <td><?= e($r['apellidos_nombres']) ?></td>
-          <td><small><?= e($r['regimen']) ?></small></td>
-          <td><small><?= e($r['dependencia']) ?></small></td>
-          <td><small><?= e($r['cargo']) ?></small></td>
-
-          <td>
-            <?php if ((int)$r['activo']): ?>
-              <span class="badge text-bg-success">Activo</span>
-            <?php else: ?>
-              <span class="badge text-bg-secondary">Inactivo</span>
-            <?php endif; ?>
-          </td>
-
-          <td>
-            <?php if ($r['user_id']): ?>
-              <span class="badge text-bg-<?= $r['rol']==='admin'?'danger':'info' ?>" title="<?= e($r['username']) ?>">
-                <?= e($r['rol']) ?>
-              </span>
-              <?php if (!(int)$r['user_activo']): ?>
-                <span class="badge text-bg-secondary">deshabilitado</span>
-              <?php endif; ?>
-            <?php else: ?>
-              <span class="badge text-bg-warning">sin usuario</span>
-            <?php endif; ?>
-          </td>
-
-          <td>
-            <?php if ($r['user_id']): ?>
-              <?php if ((int)$r['must_change']): ?>
-                <span class="badge text-bg-warning" title="Debe cambiar clave al ingresar">pendiente</span>
-              <?php else: ?>
-                <span class="badge text-bg-success" title="Ya cambio la clave">OK</span>
-              <?php endif; ?>
-            <?php else: ?>
-              <span class="text-muted">-</span>
-            <?php endif; ?>
-          </td>
-
-          <td class="text-end" style="white-space:nowrap">
-            <a class="btn btn-sm btn-outline-primary"
-               href="<?= url('admin/personal_nuevo.php') ?>?edit=<?= (int)$r['id'] ?>"
-               title="Editar personal y gestionar usuario">
-              <i class="bi bi-pencil"></i>
-            </a>
-            <a class="btn btn-sm btn-outline-danger"
-               href="?del=<?= (int)$r['id'] ?>&_csrf=<?= e(csrf_token()) ?>&q=<?= e($q) ?>"
-               onclick="return confirm('Eliminar este personal? Si tiene papeletas no se podra.');"
-               title="Eliminar">
-              <i class="bi bi-trash"></i>
-            </a>
-          </td>
+          <th>DNI</th>
+          <th>Apellidos y Nombres</th>
+          <th>Regimen</th>
+          <th>Dependencia</th>
+          <th>Cargo</th>
+          <th>Estado</th>
+          <th>Usuario</th>
+          <th>Clave</th>
+          <th class="actions">Acciones</th>
         </tr>
-      <?php endforeach; endif; ?>
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+        <?php if (!$rows): ?>
+          <tr>
+            <td colspan="9">
+              <div class="empty-state">
+                <div class="empty-icon"><i class="bi bi-people"></i></div>
+                <h5>Sin registros de personal</h5>
+                <p>Importe un CSV con los datos o cree registros uno a uno.</p>
+                <div class="d-flex gap-2 justify-content-center">
+                  <a href="<?= url('admin/importar_personal.php') ?>" class="btn btn-outline-primary"><i class="bi bi-upload"></i> Importar CSV</a>
+                  <a href="<?= url('admin/personal_nuevo.php') ?>" class="btn btn-cta"><i class="bi bi-plus-circle-fill"></i> Nuevo personal</a>
+                </div>
+              </div>
+            </td>
+          </tr>
+        <?php else: foreach ($rows as $r): ?>
+          <tr>
+            <td class="text-mono"><?= e($r['dni']) ?></td>
+            <td>
+              <strong><?= e($r['apellidos_nombres']) ?></strong>
+            </td>
+            <td><small class="text-muted"><?= e($r['regimen']) ?></small></td>
+            <td><small class="text-muted"><?= e($r['dependencia']) ?></small></td>
+            <td><small class="text-muted"><?= e($r['cargo']) ?></small></td>
+            <td>
+              <?php if ((int)$r['activo']): ?>
+                <span class="badge text-bg-success">Activo</span>
+              <?php else: ?>
+                <span class="badge text-bg-secondary">Inactivo</span>
+              <?php endif; ?>
+            </td>
+            <td>
+              <?php if ($r['user_id']): ?>
+                <span class="badge text-bg-<?= $r['rol']==='admin'?'danger':'primary' ?>" title="<?= e($r['username']) ?>">
+                  <?= e($r['rol']) ?>
+                </span>
+                <?php if (!(int)$r['user_activo']): ?>
+                  <span class="badge text-bg-secondary ms-1">deshab.</span>
+                <?php endif; ?>
+              <?php else: ?>
+                <span class="badge text-bg-warning">sin usuario</span>
+              <?php endif; ?>
+            </td>
+            <td>
+              <?php if ($r['user_id']): ?>
+                <?php if ((int)$r['must_change']): ?>
+                  <span class="badge text-bg-warning" title="Debe cambiar clave al ingresar">pendiente</span>
+                <?php else: ?>
+                  <span class="badge text-bg-success" title="Ya cambio la clave">OK</span>
+                <?php endif; ?>
+              <?php else: ?>
+                <span class="text-muted">—</span>
+              <?php endif; ?>
+            </td>
+            <td class="actions">
+              <a class="btn btn-icon btn-outline-primary" href="<?= url('admin/personal_nuevo.php') ?>?edit=<?= (int)$r['id'] ?>" title="Editar">
+                <i class="bi bi-pencil"></i>
+              </a>
+              <a class="btn btn-icon btn-outline-danger" href="?del=<?= (int)$r['id'] ?>&_csrf=<?= e(csrf_token()) ?>&q=<?= e($q) ?>" onclick="return confirm('Eliminar este personal? Si tiene papeletas no se podra.');" title="Eliminar">
+                <i class="bi bi-trash"></i>
+              </a>
+            </td>
+          </tr>
+        <?php endforeach; endif; ?>
+      </tbody>
+    </table>
   </div>
 </div>
 

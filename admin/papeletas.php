@@ -13,7 +13,7 @@ $filtroAnio  = (int) ($_GET['anio']       ?? date('Y'));
 $filtroUser  = (int) ($_GET['usuario']    ?? 0);
 
 $params = [];
-$sql = 'SELECT p.id, p.numero, p.fecha_emision, p.motivo_salida, p.hora_salida, p.hora_retorno,
+$sql = 'SELECT p.id, p.numero, p.fecha_emision, p.motivo_salida,
                p.retorna, p.lugar,
                per.apellidos_nombres, per.dni,
                u.username
@@ -40,66 +40,83 @@ $usuarios = DB::pdo()->query('SELECT id, username FROM usuarios ORDER BY usernam
 layout_header('Todas las papeletas');
 render_flashes();
 ?>
-<div class="d-flex justify-content-between align-items-center mb-3">
-  <h5 class="mb-0"><i class="bi bi-files"></i> Papeletas emitidas (<?= count($rows) ?>)</h5>
+
+<div class="page-header">
+  <div>
+    <h1><i class="bi bi-files"></i> Todas las papeletas</h1>
+    <div class="page-sub">Auditoria de papeletas emitidas en la institucion. <span class="badge text-bg-secondary"><?= count($rows) ?> resultados</span></div>
+  </div>
 </div>
 
-<form method="get" class="card p-3 mb-3">
-  <div class="row g-2 align-items-end">
-    <div class="col-md-5">
-      <label class="form-label small">Buscar</label>
-      <input class="form-control" name="q" placeholder="N°, nombre o DNI" value="<?= e($q) ?>">
-    </div>
-    <div class="col-md-3">
-      <label class="form-label small">Año</label>
-      <input type="number" class="form-control" name="anio" value="<?= $filtroAnio ?>">
-    </div>
-    <div class="col-md-3">
-      <label class="form-label small">Usuario</label>
-      <select class="form-select" name="usuario">
-        <option value="0">— Todos —</option>
-        <?php foreach ($usuarios as $uu): ?>
-          <option value="<?= (int)$uu['id'] ?>" <?= $filtroUser==$uu['id']?'selected':'' ?>><?= e($uu['username']) ?></option>
-        <?php endforeach; ?>
-      </select>
-    </div>
-    <div class="col-md-1">
-      <button class="btn btn-primary w-100"><i class="bi bi-search"></i></button>
-    </div>
+<form method="get" class="toolbar">
+  <div class="input-icon flex-grow-1" style="min-width:240px">
+    <i class="bi bi-search"></i>
+    <input class="form-control" name="q" placeholder="Buscar por N&uacute;mero, nombre o DNI" value="<?= e($q) ?>">
   </div>
+  <div style="min-width:120px">
+    <label class="form-label small mb-1">A&ntilde;o</label>
+    <input type="number" class="form-control" name="anio" value="<?= $filtroAnio ?>">
+  </div>
+  <div style="min-width:180px">
+    <label class="form-label small mb-1">Usuario</label>
+    <select class="form-select" name="usuario">
+      <option value="0">&mdash; Todos &mdash;</option>
+      <?php foreach ($usuarios as $uu): ?>
+        <option value="<?= (int)$uu['id'] ?>" <?= $filtroUser==$uu['id']?'selected':'' ?>><?= e($uu['username']) ?></option>
+      <?php endforeach; ?>
+    </select>
+  </div>
+  <button class="btn btn-primary"><i class="bi bi-funnel"></i> Filtrar</button>
+  <?php if ($q || $filtroUser): ?>
+    <a href="?" class="btn btn-secondary"><i class="bi bi-x-lg"></i></a>
+  <?php endif; ?>
 </form>
 
-<div class="card">
+<div class="table-wrap">
   <div class="table-responsive">
-  <table class="table table-sm table-hover mb-0 align-middle">
-    <thead class="table-light">
-      <tr>
-        <th>N°</th><th>Fecha</th><th>Solicitante</th><th>DNI</th><th>Motivo</th>
-        <th>Hora S/R</th><th>Lugar</th><th>Usuario</th><th></th>
-      </tr>
-    </thead>
-    <tbody>
-      <?php if (!$rows): ?>
-        <tr><td colspan="9" class="text-center text-muted py-4">Sin resultados para el filtro.</td></tr>
-      <?php else: foreach ($rows as $r): ?>
+    <table class="table align-middle mb-0">
+      <thead>
         <tr>
-          <td><strong><?= e($r['numero']) ?></strong></td>
-          <td><small><?= e($r['fecha_emision']) ?></small></td>
-          <td><?= e($r['apellidos_nombres']) ?></td>
-          <td><?= e($r['dni']) ?></td>
-          <td><span class="badge text-bg-info"><?= e(PapeletaPDF::motivoCodigoALabel($r['motivo_salida'])) ?></span></td>
-          <td><small><?= e(substr($r['hora_salida'] ?? '', 0, 5)) ?> / <?= e(substr($r['hora_retorno'] ?? '', 0, 5)) ?></small></td>
-          <td><small><?= e($r['lugar']) ?></small></td>
-          <td><small><?= e($r['username']) ?></small></td>
-          <td class="text-end">
-            <a class="btn btn-sm btn-primary" href="<?= url('papeleta_descargar.php') ?>?id=<?= (int)$r['id'] ?>">
-              <i class="bi bi-download"></i>
-            </a>
-          </td>
+          <th>N&deg;</th>
+          <th>Fecha</th>
+          <th>Solicitante</th>
+          <th>DNI</th>
+          <th>Motivo</th>
+          <th>Lugar</th>
+          <th>Usuario</th>
+          <th class="actions">PDF</th>
         </tr>
-      <?php endforeach; endif; ?>
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+        <?php if (!$rows): ?>
+          <tr>
+            <td colspan="8">
+              <div class="empty-state">
+                <div class="empty-icon"><i class="bi bi-funnel"></i></div>
+                <h5>Sin resultados para el filtro</h5>
+                <p>Pruebe cambiar el a&ntilde;o, el usuario o limpiar la busqueda.</p>
+                <a href="?" class="btn btn-outline-primary"><i class="bi bi-x-lg"></i> Limpiar filtros</a>
+              </div>
+            </td>
+          </tr>
+        <?php else: foreach ($rows as $r): ?>
+          <tr>
+            <td class="text-mono"><strong><?= e($r['numero']) ?></strong></td>
+            <td><small class="text-mono text-muted"><?= e($r['fecha_emision']) ?></small></td>
+            <td><?= e($r['apellidos_nombres']) ?></td>
+            <td class="text-mono"><?= e($r['dni']) ?></td>
+            <td><span class="badge text-bg-info"><?= e(PapeletaPDF::motivoCodigoALabel($r['motivo_salida'])) ?></span></td>
+            <td><small class="text-muted"><?= e($r['lugar']) ?></small></td>
+            <td><small class="text-muted"><?= e($r['username']) ?></small></td>
+            <td class="actions">
+              <a class="btn btn-icon btn-outline-primary" href="<?= url('papeleta_descargar.php') ?>?id=<?= (int)$r['id'] ?>" title="Descargar PDF">
+                <i class="bi bi-download"></i>
+              </a>
+            </td>
+          </tr>
+        <?php endforeach; endif; ?>
+      </tbody>
+    </table>
   </div>
 </div>
 <?php layout_footer();

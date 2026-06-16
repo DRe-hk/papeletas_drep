@@ -53,7 +53,7 @@ CREATE TABLE papeletas (
   anio                SMALLINT     NOT NULL,
   correlativo         INT          NOT NULL,
   usuario_id          INT UNSIGNED NOT NULL,
-  personal_id         INT UNSIGNED NOT NULL COMMENT 'snapshot del solicitante',
+  personal_id         INT UNSIGNED NULL COMMENT 'snapshot del solicitante',
 
   motivo_salida       VARCHAR(50)  NOT NULL,
   fundamentacion      TEXT         NULL,
@@ -61,10 +61,7 @@ CREATE TABLE papeletas (
   dia                 TINYINT      NULL,
   mes                 TINYINT      NULL,
   anio_dmy            SMALLINT     NULL,
-  hora_salida         TIME         NULL,
-  hora_retorno        TIME         NULL,
   retorna             ENUM('SI','NO') NOT NULL DEFAULT 'NO',
-  observaciones       TEXT         NULL,
 
   fecha_emision       DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
 

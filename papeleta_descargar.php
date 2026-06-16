@@ -39,10 +39,7 @@ $payload = array_merge($per, [
     'dia'               => $p['dia'],
     'mes'               => $p['mes'],
     'anio_dmy'          => $p['anio_dmy'],
-    'hora_salida'       => $p['hora_salida'],
-    'hora_retorno'      => $p['hora_retorno'],
     'retorna'           => $p['retorna'],
-    'observaciones'     => $p['observaciones'],
 ]);
 
 PapeletaPDF::generar($payload, 'D', 'papeleta-' . $p['numero'] . '.pdf');

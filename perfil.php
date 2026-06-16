@@ -15,20 +15,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $nueva2    = $_POST['nueva2']    ?? '';
 
     if ($nueva === '' || strlen($nueva) < 6) {
-        $err = 'La nueva contraseña debe tener al menos 6 caracteres.';
+        $err = 'La nueva contrasena debe tener al menos 6 caracteres.';
     } elseif ($nueva !== $nueva2) {
-        $err = 'La confirmación no coincide.';
+        $err = 'La confirmacion no coincide.';
     } else {
         $st = DB::pdo()->prepare('SELECT password_hash FROM usuarios WHERE id = ?');
         $st->execute([$u['id']]);
         $row = $st->fetch();
         if (!$row || !password_verify($actual, $row['password_hash'])) {
-            $err = 'La contraseña actual es incorrecta.';
+            $err = 'La contrasena actual es incorrecta.';
         } else {
             $hash = password_hash($nueva, PASSWORD_BCRYPT);
             DB::pdo()->prepare('UPDATE usuarios SET password_hash = ?, must_change = 0 WHERE id = ?')
                      ->execute([$hash, $u['id']]);
-            $ok = 'Contraseña actualizada.';
+            $ok = 'Contrasena actualizada.';
         }
     }
 }
@@ -36,42 +36,80 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 layout_header('Mi perfil');
 render_flashes();
 ?>
+
+<div class="page-header">
+  <div>
+    <h1><i class="bi bi-person-circle"></i> Mi perfil</h1>
+    <div class="page-sub">Administre su informacion de cuenta y cambie su contrasena cuando lo necesite.</div>
+  </div>
+</div>
+
 <div class="row g-3">
-  <div class="col-md-5">
+  <div class="col-lg-5">
     <div class="card">
+      <div class="card-header"><i class="bi bi-person-vcard me-1"></i> Informacion de la cuenta</div>
       <div class="card-body">
-        <h5 class="card-title"><i class="bi bi-person-circle"></i> Mi cuenta</h5>
         <dl class="row mb-0">
-          <dt class="col-sm-4">Usuario</dt><dd class="col-sm-8"><?= e($u['username']) ?></dd>
-          <dt class="col-sm-4">Rol</dt>     <dd class="col-sm-8"><?= e($u['rol']) ?></dd>
-          <dt class="col-sm-4">DNI</dt>     <dd class="col-sm-8"><?= e($u['dni'] ?? '-') ?></dd>
-          <dt class="col-sm-4">Nombres</dt> <dd class="col-sm-8"><?= e($u['apellidos_nombres'] ?? '-') ?></dd>
+          <dt class="col-sm-4 text-muted fw-normal small">Usuario</dt>
+          <dd class="col-sm-8"><code><?= e($u['username']) ?></code></dd>
+          <dt class="col-sm-4 text-muted fw-normal small">Rol</dt>
+          <dd class="col-sm-8">
+            <?php if (($u['rol'] ?? '') === 'admin'): ?>
+              <span class="badge text-bg-danger">admin</span>
+            <?php else: ?>
+              <span class="badge text-bg-secondary">usuario</span>
+            <?php endif; ?>
+          </dd>
+          <dt class="col-sm-4 text-muted fw-normal small">DNI</dt>
+          <dd class="col-sm-8 text-mono"><?= e($u['dni'] ?? '—') ?></dd>
+          <dt class="col-sm-4 text-muted fw-normal small">Nombres</dt>
+          <dd class="col-sm-8"><?= e($u['apellidos_nombres'] ?? '—') ?></dd>
         </dl>
       </div>
     </div>
   </div>
-  <div class="col-md-7">
+  <div class="col-lg-7">
     <div class="card">
+      <div class="card-header"><i class="bi bi-key me-1"></i> Cambiar contrasena</div>
       <div class="card-body">
-        <h5 class="card-title"><i class="bi bi-key"></i> Cambiar contraseña</h5>
-        <?php if ($err): ?><div class="alert alert-danger py-2"><?= e($err) ?></div><?php endif; ?>
-        <?php if ($ok):  ?><div class="alert alert-success py-2"><?= e($ok) ?></div><?php endif; ?>
+        <?php if ($err): ?>
+          <div class="alert alert-danger">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            <div><?= e($err) ?></div>
+          </div>
+        <?php endif; ?>
+        <?php if ($ok): ?>
+          <div class="alert alert-success">
+            <i class="bi bi-check-circle-fill"></i>
+            <div><?= e($ok) ?></div>
+          </div>
+        <?php endif; ?>
         <form method="post" class="row g-3">
           <input type="hidden" name="_csrf" value="<?= e(csrf_token()) ?>">
           <div class="col-12">
-            <label class="form-label">Contraseña actual</label>
-            <input type="password" name="actual" class="form-control" required>
+            <label class="form-label">Contrasena actual</label>
+            <div class="input-icon">
+              <i class="bi bi-lock"></i>
+              <input type="password" name="actual" class="form-control" required>
+            </div>
           </div>
           <div class="col-md-6">
-            <label class="form-label">Nueva contraseña</label>
-            <input type="password" name="nueva" class="form-control" minlength="6" required>
+            <label class="form-label">Nueva contrasena</label>
+            <div class="input-icon">
+              <i class="bi bi-shield-lock"></i>
+              <input type="password" name="nueva" class="form-control" minlength="6" required>
+            </div>
+            <div class="form-text">Minimo 6 caracteres.</div>
           </div>
           <div class="col-md-6">
-            <label class="form-label">Confirmar</label>
-            <input type="password" name="nueva2" class="form-control" minlength="6" required>
+            <label class="form-label">Confirmar nueva contrasena</label>
+            <div class="input-icon">
+              <i class="bi bi-shield-check"></i>
+              <input type="password" name="nueva2" class="form-control" minlength="6" required>
+            </div>
           </div>
-          <div class="col-12">
-            <button class="btn btn-primary"><i class="bi bi-save"></i> Guardar</button>
+          <div class="col-12 d-flex justify-content-end">
+            <button class="btn btn-primary"><i class="bi bi-save"></i> Guardar cambios</button>
           </div>
         </form>
       </div>

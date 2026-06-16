@@ -55,13 +55,8 @@ final class PapeletaPDF
         "dia" => ["x" => 9, "y" => 103, "size" => 6],
         "mes" => ["x" => 18, "y" => 103, "size" => 6],
         "anio_dmy" => ["x" => 26, "y" => 103, "size" => 6],
-        "hora_salida" => ["x" => 57, "y" => 98, "size" => 6],
-        "hora_retorno" => ["x" => 93, "y" => 98, "size" => 6],
-
-        "retorna_si" => ["x" => 82, "y" => 105, "check" => true],
-        "retorna_no" => ["x" => 94, "y" => 105, "check" => true],
-
-        "observaciones" => ["x" => 25, "y" => 110, "size" => 6, "width" => 90],
+"retorna_si" => ["x" => 82, "y" => 105, "check" => true],
+"retorna_no" => ["x" => 94, "y" => 105, "check" => true],
 
         // ----------------------- PAPELETA DE RETORNO (derecha, x: 110-200) ------
         "numero_ret" => ["x" => 185, "y" => 7.5, "size" => 6],
@@ -73,7 +68,6 @@ final class PapeletaPDF
         "dependencia_ret" => ["x" => 145, "y" => 35, "size" => 6],
         "cargo_ret" => ["x" => 145, "y" => 40, "size" => 6],
 
-        "observaciones_ret" => ["x" => 124, "y" => 55, "size" => 6],
         "lugar_visita" => ["x" => 153, "y" => 75, "size" => 6],
     ];
 
@@ -213,24 +207,12 @@ final class PapeletaPDF
         $drawText($pdf, $p["dia"] ?? "", $pos["dia"]);
         $drawText($pdf, $p["mes"] ?? "", $pos["mes"]);
         $drawText($pdf, $p["anio_dmy"] ?? "", $pos["anio_dmy"]);
-        $drawText(
-            $pdf,
-            $p["hora_salida"] ? substr($p["hora_salida"], 0, 5) : "",
-            $pos["hora_salida"],
-        );
-        $drawText(
-            $pdf,
-            $p["hora_retorno"] ? substr($p["hora_retorno"], 0, 5) : "",
-            $pos["hora_retorno"],
-        );
 
         if (($p["retorna"] ?? "NO") === "SI") {
             $drawCheck($pdf, $pos["retorna_si"]);
         } else {
             $drawCheck($pdf, $pos["retorna_no"]);
         }
-
-        $drawText($pdf, $p["observaciones"] ?? "", $pos["observaciones"]);
 
         // ---- Bloque RETORNO ----
         $drawText($pdf, $p["numero"], $pos["numero_ret"]);
