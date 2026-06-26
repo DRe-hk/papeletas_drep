@@ -76,7 +76,7 @@ render_flashes();
 
 <div class="page-header">
   <div>
-    <h1><i class="bi bi-person-vcard"></i> Personal y usuarios</h1>
+    <h1><i class="bi bi-person-vcard"></i> Personal</h1>
     <div class="page-sub">Administre los registros del personal y los usuarios del sistema. <span class="badge text-bg-secondary"><?= count($rows) ?> registros</span></div>
   </div>
   <div class="d-flex gap-2 flex-wrap">

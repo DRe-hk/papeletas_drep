@@ -183,18 +183,9 @@ code, kbd, pre { font-family: var(--font-mono); font-size: .92em; }
   display: flex; align-items: center; gap: .65rem;
   color: var(--text-1);
 }
-.app-navbar .brand-mark {
-  width: 36px; height: 36px;
-  display: inline-flex; align-items: center; justify-content: center;
-  background: linear-gradient(135deg, var(--brand-500), var(--brand-700));
-  color: var(--text-on-brand);
-  border-radius: 8px;
-  font-size: 1.1rem;
-  box-shadow: 0 2px 4px oklch(48% 0.13 245 / .25);
-}
+.app-navbar .brand-logo { height: 36px; width: auto; border-radius: 8px; }
 .app-navbar .brand-text { display: flex; flex-direction: column; line-height: 1.1; }
-.app-navbar .brand-text .name { font-weight: 700; font-size: 1rem; color: var(--text-1); letter-spacing: -.01em; }
-.app-navbar .brand-text .sub  { font-size: .72rem; color: var(--text-3); letter-spacing: .02em; text-transform: uppercase; }
+.app-navbar .brand-text .name { font-weight: 700; font-size: 1rem; color: var(--text-1); letter-spacing: .01em; text-transform: uppercase; }
 
 .app-navbar .nav-link {
   color: var(--text-2);
@@ -238,14 +229,9 @@ code, kbd, pre { font-family: var(--font-mono); font-size: .92em; }
   transition: border-color .15s ease, background .15s ease;
 }
 .app-navbar .user-chip:hover { border-color: var(--brand-200); background: var(--brand-50); color: var(--brand-700); }
-.app-navbar .user-chip .avatar {
-  width: 26px; height: 26px;
-  border-radius: 50%;
-  background: var(--warm-500);
-  color: white;
-  display: inline-flex; align-items: center; justify-content: center;
-  font-size: .7rem; font-weight: 700;
-  text-transform: uppercase;
+.app-navbar .user-chip i.bi-gear {
+  font-size: 1rem;
+  color: var(--text-2);
 }
 .app-navbar .user-chip .role-dot {
   width: 7px; height: 7px; border-radius: 50%;
@@ -721,6 +707,19 @@ a:hover { text-decoration: underline; text-underline-offset: 2px; }
 CSS;
 }
 
+function chip_name(array $u): string
+{
+    $full = trim($u['apellidos_nombres'] ?? '');
+    if ($full === '') {
+        return $u['username'] ?? '';
+    }
+    $parts = preg_split('/\s+/', $full);
+    if (count($parts) >= 3) {
+        return $parts[2] . ' ' . $parts[0];
+    }
+    return $full;
+}
+
 function layout_header(string $titulo): void
 {
     $u = current_user();
@@ -742,10 +741,9 @@ function layout_header(string $titulo): void
 <nav class="navbar navbar-expand-lg app-navbar sticky-top">
   <div class="container">
     <a class="navbar-brand" href="<?= url('dashboard.php') ?>">
-      <span class="brand-mark"><i class="bi bi-file-earmark-pdf-fill"></i></span>
+      <img src="<?= e(url('assets/logo.png')) ?>" alt="" class="brand-logo">
       <span class="brand-text">
-        <span class="name">Papeletas de Salida</span>
-        <span class="sub">DRE Puno · Oficina de Informatica</span>
+        <span class="name"><?= e(APP_NAME) ?></span>
       </span>
     </a>
     <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav" aria-label="Menu">
@@ -754,25 +752,21 @@ function layout_header(string $titulo): void
     <div class="collapse navbar-collapse" id="mainNav">
       <ul class="navbar-nav me-auto mb-2 mb-lg-0">
         <li class="nav-item"><a class="nav-link" href="<?= url('dashboard.php') ?>"><i class="bi bi-house"></i>Inicio</a></li>
-        <li class="nav-item"><a class="nav-link" href="<?= url('papeleta_nueva.php') ?>"><i class="bi bi-plus-circle"></i>Nueva papeleta</a></li>
         <?php if ($u['rol'] === 'admin'): ?>
-        <li class="nav-item dropdown">
-          <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button">
-            <i class="bi bi-gear"></i>Administracion
-          </a>
-          <ul class="dropdown-menu">
-            <li><a class="dropdown-item" href="<?= url('admin/personal.php') ?>"><i class="bi bi-person-vcard"></i>Personal y usuarios</a></li>
-            <li><a class="dropdown-item" href="<?= url('admin/importar_personal.php') ?>"><i class="bi bi-upload"></i>Importar personal (CSV)</a></li>
-            <li><a class="dropdown-item" href="<?= url('admin/papeletas.php') ?>"><i class="bi bi-files"></i>Todas las papeletas</a></li>
-          </ul>
-        </li>
+        <li class="nav-item"><a class="nav-link" href="<?= url('admin/papeletas.php') ?>"><i class="bi bi-files"></i>Papeletas</a></li>
+        <li class="nav-item"><a class="nav-link" href="<?= url('admin/personal.php') ?>"><i class="bi bi-person-vcard"></i>Personal</a></li>
         <?php endif; ?>
       </ul>
       <ul class="navbar-nav align-items-lg-center">
         <li class="nav-item">
+          <a class="btn btn-primary rounded-pill" href="<?= url('papeleta_nueva.php') ?>">
+            <i class="bi bi-plus-circle"></i> Nueva papeleta
+          </a>
+        </li>
+        <li class="nav-item ms-2">
           <a class="user-chip" href="<?= url('perfil.php') ?>" title="Mi cuenta">
-            <span class="avatar"><?= e(mb_substr($u['username'] ?? '?', 0, 1, 'UTF-8')) ?></span>
-            <span><?= e($u['username'] ?? '') ?></span>
+            <i class="bi bi-gear"></i>
+            <span><?= e(chip_name($u)) ?></span>
             <?php if (($u['rol'] ?? '') === 'admin'): ?>
               <span class="badge text-bg-danger" style="font-size:.62rem">admin</span>
             <?php endif; ?>

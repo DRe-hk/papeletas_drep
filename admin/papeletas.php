@@ -37,13 +37,13 @@ $rows = $st->fetchAll();
 
 $usuarios = DB::pdo()->query('SELECT id, username FROM usuarios ORDER BY username')->fetchAll();
 
-layout_header('Todas las papeletas');
+layout_header('Papeletas');
 render_flashes();
 ?>
 
 <div class="page-header">
   <div>
-    <h1><i class="bi bi-files"></i> Todas las papeletas</h1>
+    <h1><i class="bi bi-files"></i> Papeletas</h1>
     <div class="page-sub">Auditoria de papeletas emitidas en la institucion. <span class="badge text-bg-secondary"><?= count($rows) ?> resultados</span></div>
   </div>
 </div>
