@@ -53,9 +53,9 @@ $token = csrf_token();
 <div class="login-shell">
   <div class="login-card">
     <div class="login-head">
-      <div class="login-mark"><i class="bi bi-file-earmark-pdf-fill"></i></div>
-      <h4><?= e(APP_NAME) ?></h4>
-      <small>Sistema de Papeletas de Salida</small>
+      <img src="<?= e(url('assets/logo.png')) ?>" alt="" class="brand-logo">
+      <h4>Papeletas de Salida</h4>
+      <small><?= e(APP_NAME) ?></small>
     </div>
     <div class="login-body">
       <?php if ($error): ?>

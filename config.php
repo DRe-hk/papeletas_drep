@@ -36,7 +36,7 @@ const DB_PASS = ""; // Laragon por defecto deja root sin password
 const DB_CHARSET = "utf8mb4";
 
 // Configuración de la app
-const APP_NAME = "DREP - Oficina de Informatica - Sistema de Papeletas de Salida";
+const APP_NAME = "DREP - Oficina de Informatica";
 const APP_URL = ""; // Se detecta automáticamente si está vacío
 
 // Prefijo URL de la app dentro del DocumentRoot del servidor.
