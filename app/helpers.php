@@ -743,7 +743,7 @@ function layout_header(string $titulo): void
     <a class="navbar-brand" href="<?= url('dashboard.php') ?>">
       <img src="<?= e(url('assets/logo.png')) ?>" alt="" class="brand-logo">
       <span class="brand-text">
-        <span class="name"><?= e(APP_NAME) ?></span>
+        <span class="name">Papeletas de Salida</span>
       </span>
     </a>
     <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav" aria-label="Menu">
